@@ -1,42 +1,35 @@
-mod block;
 mod blockchain;
-mod transaction;
+mod block;
 mod wallet;
+mod transaction;
+mod miner;
 
 use blockchain::Blockchain;
+use miner::Miner;
 use transaction::Transaction;
 
 fn main() {
-    // Загружаем блокчейн из файла
-    let mut blockchain = Blockchain::load_from_disk().unwrap_or_else(|_| Blockchain::new());
+    // Load blockchain from files
+    let mut blockchain = Blockchain::load_from_files().unwrap_or_else(|_| Blockchain::new());
 
-    // Адрес майнера
-    let miner_address = "miner1".to_string();
+    // Create a miner
+    let miner = Miner::new("miner1".to_string());
 
-    // Пример транзакций
+    // Example transactions
     let transactions = vec![
         Transaction::new("user1".to_string(), "user2".to_string(), 50),
         Transaction::new("user2".to_string(), "user3".to_string(), 25),
     ];
 
-    // Майним новые блоки
-    blockchain.add_block(
-        "Первый блок после генезиса".to_string(),
-        miner_address.clone(),
-        transactions.clone(),
-    );
-    blockchain.add_block(
-        "Второй блок после генезиса".to_string(),
-        miner_address.clone(),
-        transactions.clone(),
-    );
+    // Mine new blocks
+    miner.mine_block(&mut blockchain, "First block after genesis".to_string(), transactions.clone());
+    miner.mine_block(&mut blockchain, "Second block after genesis".to_string(), transactions.clone());
 
-    // Сохраняем блокчейн на диск
-    blockchain
-        .save_to_disk()
-        .expect("Ошибка при сохранении блокчейна");
+    // Save blockchain and wallets to files
+    blockchain.save_to_files().expect("Error saving blockchain data");
+    blockchain.save_wallets_to_file().expect("Error saving wallet data");
 
-    // Выводим блоки
+    // Print blocks
     for block in blockchain.chain.iter() {
         println!(
             "Block {{ index: {}, timestamp: {}, data: '{}', previous_hash: '{}', hash: '{}', nonce: {}, transactions: {:?} }}",
@@ -44,10 +37,10 @@ fn main() {
         );
     }
 
-    // Выводим баланс майнера
+    // Print miner balance
     println!(
-        "Баланс кошелька майнера {}: {} токенов",
-        miner_address,
-        blockchain.get_wallet_balance(&miner_address)
+        "Miner wallet balance {}: {} tokens",
+        miner.address,
+        blockchain.get_wallet_balance(&miner.address)
     );
 }

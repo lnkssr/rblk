@@ -1,9 +1,9 @@
 use crate::block::Block;
-use crate::transaction::Transaction;
 use crate::wallet::Wallet;
+use crate::transaction::Transaction;
 use serde::{Deserialize, Serialize};
-use std::fs::File;
-use std::io::{Read, Write};
+use std::fs;
+use std::path::Path;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Blockchain {
@@ -42,6 +42,11 @@ impl Blockchain {
 
         self.reward_miner(miner_address, 50);
         self.chain.push(new_block);
+
+        // Save block and wallet data to files
+        if let Err(e) = self.save_to_files() {
+            eprintln!("Error saving blockchain data: {:?}", e);
+        }
     }
 
     pub fn reward_miner(&mut self, miner_address: String, reward: u64) {
@@ -58,34 +63,38 @@ impl Blockchain {
         };
 
         self.wallets.push(new_wallet);
+
+        // Save wallet data to file
+        if let Err(e) = self.save_wallets_to_file() {
+            eprintln!("Error saving wallet data: {:?}", e);
+        }
     }
 
-    pub fn save_to_disk(&self) -> std::io::Result<()> {
-        let serialized_chain = serde_json::to_string(&self)?;
-        let mut file = File::create("blockchain_data.json")?;
-        file.write_all(serialized_chain.as_bytes())?;
+    pub fn save_to_files(&self) -> Result<(), std::io::Error> {
+        let blockchain_path = Path::new("blockchain.json");
+        let blockchain_json = serde_json::to_string(self)?;
+        fs::write(blockchain_path, blockchain_json)?;
+
         Ok(())
     }
 
-    pub fn load_from_disk() -> std::io::Result<Blockchain> {
-        let mut file = match File::open("blockchain_data.json") {
-            Ok(file) => file,
-            Err(_) => {
-                println!("Файл не найден. Создаем новый блокчейн с генезис-блоком.");
-                return Ok(Blockchain::new());
-            }
-        };
+    pub fn save_wallets_to_file(&self) -> Result<(), std::io::Error> {
+        let wallets_path = Path::new("wallets.json");
+        let wallets_json = serde_json::to_string(&self.wallets)?;
+        fs::write(wallets_path, wallets_json)?;
 
-        let mut data = String::new();
-        file.read_to_string(&mut data)?;
+        Ok(())
+    }
 
-        if data.trim().is_empty() {
-            println!("Файл пуст. Создаем новый блокчейн с генезис-блоком.");
-            return Ok(Blockchain::new());
-        }
+    pub fn load_from_files() -> Result<Blockchain, std::io::Error> {
+        let blockchain_path = Path::new("blockchain.json");
+        let blockchain_json = fs::read_to_string(blockchain_path)?;
+        let mut blockchain: Blockchain = serde_json::from_str(&blockchain_json)?;
 
-        let blockchain: Blockchain =
-            serde_json::from_str(&data).expect("Ошибка при десериализации данных");
+        let wallets_path = Path::new("wallets.json");
+        let wallets_json = fs::read_to_string(wallets_path)?;
+        blockchain.wallets = serde_json::from_str(&wallets_json)?;
+
         Ok(blockchain)
     }
 

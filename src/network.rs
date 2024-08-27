@@ -9,10 +9,10 @@ impl Network {
     }
 
     pub fn start(&self) {
-        // Простейший пример работы сетевого слоя
+        // Simple example of network operations
         thread::spawn(move || {
             loop {
-                // Здесь будет код для обработки входящих и исходящих сообщений
+                // Code to handle incoming and outgoing messages would go here
                 println!("Network is running...");
                 thread::sleep(Duration::from_secs(5));
             }

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Clone)] // Добавляем Clone
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Transaction {
     pub from: String,
     pub to: String,

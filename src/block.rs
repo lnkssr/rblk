@@ -13,9 +13,8 @@ pub struct Block {
     pub previous_hash: String,
     pub hash: String,
     pub nonce: u64,
-    pub transactions: Vec<Transaction>, // Добавляем транзакции
+    pub transactions: Vec<Transaction>,
 }
-
 impl Block {
     pub fn new(
         index: u64,
