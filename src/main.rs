@@ -1,8 +1,8 @@
-mod blockchain;
 mod block;
-mod wallet;
-mod transaction;
+mod blockchain;
 mod miner;
+mod transaction;
+mod wallet;
 
 use blockchain::Blockchain;
 use miner::Miner;
@@ -22,12 +22,24 @@ fn main() {
     ];
 
     // Mine new blocks
-    miner.mine_block(&mut blockchain, "First block after genesis".to_string(), transactions.clone());
-    miner.mine_block(&mut blockchain, "Second block after genesis".to_string(), transactions.clone());
+    miner.mine_block(
+        &mut blockchain,
+        "First block after genesis".to_string(),
+        transactions.clone(),
+    );
+    miner.mine_block(
+        &mut blockchain,
+        "Second block after genesis".to_string(),
+        transactions.clone(),
+    );
 
     // Save blockchain and wallets to files
-    blockchain.save_to_files().expect("Error saving blockchain data");
-    blockchain.save_wallets_to_file().expect("Error saving wallet data");
+    blockchain
+        .save_to_files()
+        .expect("Error saving blockchain data");
+    blockchain
+        .save_wallets_to_file()
+        .expect("Error saving wallet data");
 
     // Print blocks
     for block in blockchain.chain.iter() {

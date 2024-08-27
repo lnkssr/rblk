@@ -1,6 +1,6 @@
 use crate::block::Block;
-use crate::wallet::Wallet;
 use crate::transaction::Transaction;
+use crate::wallet::Wallet;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
