@@ -11,9 +11,11 @@ fn test_create_new_blockchain() {
 #[test]
 fn test_add_block_to_blockchain() {
     let mut blockchain = Blockchain::new();
-    let transactions = vec![
-        Transaction::new("user1".to_string(), "user2".to_string(), 50),
-    ];
+    let transactions = vec![Transaction::new(
+        "user1".to_string(),
+        "user2".to_string(),
+        50,
+    )];
     blockchain.add_block("New Block".to_string(), "miner1".to_string(), transactions);
     assert_eq!(blockchain.chain.len(), 2);
 }
