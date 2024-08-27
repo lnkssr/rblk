@@ -1,83 +1,171 @@
+use std::fmt::Write;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-/// Структура для блока
+#[derive(Debug, Clone)]
+struct Transaction {
+    sender: String,
+    receiver: String,
+    amount: f64,
+}
+
 #[derive(Debug)]
 struct Block {
     index: u64,
     timestamp: u128,
-    data: String,
+    transactions: Vec<Transaction>,
     previous_hash: String,
     hash: String,
+    nonce: u64,
 }
 
-/// Реализация методов для блока
 impl Block {
-    // Новый блок создается на основе предыдущего блока и данных
-    fn new(index: u64, data: String, previous_hash: String) -> Block {
+    fn new(index: u64, transactions: Vec<Transaction>, previous_hash: String) -> Block {
         let timestamp = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("Time went backwards")
             .as_millis();
 
-        let hash = Block::calculate_hash(index, &data, timestamp, &previous_hash);
-
-        Block {
+        let mut block = Block {
             index,
             timestamp,
-            data,
+            transactions,
             previous_hash,
-            hash,
-        }
+            hash: String::new(),
+            nonce: 0,
+        };
+
+        block.mine_block(2); // Майним блок с уровнем сложности 2
+        block
     }
 
-    // Вычисление хеша для блока
-    fn calculate_hash(index: u64, data: &str, timestamp: u128, previous_hash: &str) -> String {
-        let block_content = format!("{}{}{}{}", index, timestamp, data, previous_hash);
-        format!("{:x}", md5::compute(block_content)) // Используем MD5 для простоты
+    fn calculate_hash(&self) -> String {
+        let block_content = format!(
+            "{}{}{}{}{}",
+            self.index,
+            self.timestamp,
+            self.previous_hash,
+            self.nonce,
+            self.transactions_string()
+        );
+        format!("{:x}", md5::compute(block_content))
+    }
+
+    fn transactions_string(&self) -> String {
+        let mut transactions_str = String::new();
+        for tx in &self.transactions {
+            write!(
+                &mut transactions_str,
+                "{} отправил {} получателю {}; ",
+                tx.sender, tx.amount, tx.receiver
+            )
+            .unwrap();
+        }
+        transactions_str
+    }
+
+    fn mine_block(&mut self, difficulty: usize) {
+        let target = "0".repeat(difficulty);
+        while &self.hash[..difficulty] != target {
+            self.nonce += 1;
+            self.hash = self.calculate_hash();
+        }
+        println!(
+            "Блок с индексом {} замайнен! Хеш: {}",
+            self.index, self.hash
+        );
     }
 }
 
-/// Структура для блокчейна
+#[derive(Debug)]
 struct Blockchain {
     chain: Vec<Block>,
+    pending_transactions: Vec<Transaction>,
+    mining_reward: f64,
 }
 
-/// Реализация методов для блокчейна
 impl Blockchain {
-    // Создаем новый блокчейн с генезисным блоком
-    fn new() -> Blockchain {
-        let genesis_block = Block::new(0, "Genesis Block".to_string(), "0".to_string());
+    fn new(mining_reward: f64) -> Blockchain {
+        let genesis_block = Block::new(0, vec![], "0".to_string());
         Blockchain {
             chain: vec![genesis_block],
+            pending_transactions: vec![],
+            mining_reward,
         }
     }
 
-    // Получаем последний блок в цепочке
     fn get_latest_block(&self) -> &Block {
         self.chain
             .last()
             .expect("Blockchain should have at least one block")
     }
 
-    // Добавляем новый блок в блокчейн
-    fn add_block(&mut self, data: String) {
-        let previous_block = self.get_latest_block();
-        let new_block = Block::new(previous_block.index + 1, data, previous_block.hash.clone());
+    fn create_transaction(&mut self, transaction: Transaction) {
+        self.pending_transactions.push(transaction);
+    }
+
+    fn mine_pending_transactions(&mut self, miner_address: String) {
+        let latest_block_index = self.get_latest_block().index;
+    
+        // Добавляем награду за майнинг
+        let reward_tx = Transaction {
+            sender: "System".to_string(),
+            receiver: miner_address.clone(),
+            amount: self.mining_reward,
+        };
+    
+        self.pending_transactions.push(reward_tx);
+    
+        // Проверка предыдущего хеша
+        let previous_hash = self.get_latest_block().hash.clone();
+        if previous_hash.is_empty() {
+            panic!("Предыдущий хеш пустой!");
+        }
+    
+        println!("Последний хеш перед майнингом: {}", previous_hash);
+    
+        let new_block = Block::new(
+            latest_block_index + 1,
+            self.pending_transactions.clone(),
+            previous_hash,
+        );
+    
         self.chain.push(new_block);
+        self.pending_transactions.clear();
+    }
+    
+    fn is_chain_valid(&self) -> bool {
+        for i in 1..self.chain.len() {
+            let current_block = &self.chain[i];
+            let previous_block = &self.chain[i - 1];
+
+            if current_block.hash != current_block.calculate_hash() {
+                return false;
+            }
+
+            if current_block.previous_hash != previous_block.hash {
+                return false;
+            }
+        }
+        true
     }
 }
 
 fn main() {
-    let mut blockchain = Blockchain::new();
+    let mut blockchain = Blockchain::new(100.0);
 
-    blockchain.add_block("Первый блок после генезиса".to_string());
-    blockchain.add_block("Второй блок после генезиса".to_string());
+    blockchain.create_transaction(Transaction {
+        sender: "Alice".to_string(),
+        receiver: "Bob".to_string(),
+        amount: 50.0,
+    });
 
-    // Выводим информацию о блоках, включая все поля
-    for block in blockchain.chain.iter() {
-        println!(
-            "Block {{ index: {}, timestamp: {}, data: {}, previous_hash: {}, hash: {} }}",
-            block.index, block.timestamp, block.data, block.previous_hash, block.hash
-        );
-    }
+    blockchain.create_transaction(Transaction {
+        sender: "Bob".to_string(),
+        receiver: "Alice".to_string(),
+        amount: 25.0,
+    });
+
+    blockchain.mine_pending_transactions("Miner1".to_string());
+
+    println!("{:#?}", blockchain);
 }
