@@ -1,73 +1,53 @@
-use std::time::{SystemTime, UNIX_EPOCH};
+mod block;
+mod blockchain;
+mod transaction;
+mod wallet;
 
-#[derive(Debug)]
-struct Block {
-    index: u64,
-    timestamp: u128,
-    data: String,
-    previous_hash: String,
-    hash: String,
-}
-
-impl Block {
-    fn new(index: u64, data: String, previous_hash: String) -> Block {
-        let timestamp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("Time went backwards")
-            .as_millis();
-
-        let hash = Block::calculate_hash(index, &data, timestamp, &previous_hash);
-
-        Block {
-            index,
-            timestamp,
-            data,
-            previous_hash,
-            hash,
-        }
-    }
-
-    fn calculate_hash(index: u64, data: &str, timestamp: u128, previous_hash: &str) -> String {
-        let block_content = format!("{}{}{}{}", index, timestamp, data, previous_hash);
-        format!("{:x}", md5::compute(block_content)) // Используем MD5 для простоты
-    }
-}
-
-struct Blockchain {
-    chain: Vec<Block>,
-}
-
-impl Blockchain {
-    fn new() -> Blockchain {
-        let genesis_block = Block::new(0, "Genesis Block".to_string(), "0".to_string());
-        Blockchain {
-            chain: vec![genesis_block],
-        }
-    }
-
-    fn get_latest_block(&self) -> &Block {
-        self.chain
-            .last()
-            .expect("Blockchain should have at least one block")
-    }
-
-    fn add_block(&mut self, data: String) {
-        let previous_block = self.get_latest_block();
-        let new_block = Block::new(previous_block.index + 1, data, previous_block.hash.clone());
-        self.chain.push(new_block);
-    }
-}
+use blockchain::Blockchain;
+use transaction::Transaction;
 
 fn main() {
-    let mut blockchain = Blockchain::new();
+    // Загружаем блокчейн из файла
+    let mut blockchain = Blockchain::load_from_disk().unwrap_or_else(|_| Blockchain::new());
 
-    blockchain.add_block("Первый блок после генезиса".to_string());
-    blockchain.add_block("Второй блок после генезиса".to_string());
+    // Адрес майнера
+    let miner_address = "miner1".to_string();
 
+    // Пример транзакций
+    let transactions = vec![
+        Transaction::new("user1".to_string(), "user2".to_string(), 50),
+        Transaction::new("user2".to_string(), "user3".to_string(), 25),
+    ];
+
+    // Майним новые блоки
+    blockchain.add_block(
+        "Первый блок после генезиса".to_string(),
+        miner_address.clone(),
+        transactions.clone(),
+    );
+    blockchain.add_block(
+        "Второй блок после генезиса".to_string(),
+        miner_address.clone(),
+        transactions.clone(),
+    );
+
+    // Сохраняем блокчейн на диск
+    blockchain
+        .save_to_disk()
+        .expect("Ошибка при сохранении блокчейна");
+
+    // Выводим блоки
     for block in blockchain.chain.iter() {
         println!(
-            "Block {{ index: {}, timestamp: {}, data: {}, previous_hash: {}, hash: {} }}",
-            block.index, block.timestamp, block.data, block.previous_hash, block.hash
+            "Block {{ index: {}, timestamp: {}, data: '{}', previous_hash: '{}', hash: '{}', nonce: {}, transactions: {:?} }}",
+            block.index, block.timestamp, block.data, block.previous_hash, block.hash, block.nonce, block.transactions
         );
     }
+
+    // Выводим баланс майнера
+    println!(
+        "Баланс кошелька майнера {}: {} токенов",
+        miner_address,
+        blockchain.get_wallet_balance(&miner_address)
+    );
 }
