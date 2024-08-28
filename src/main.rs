@@ -6,11 +6,19 @@ mod wallet;
 
 use blockchain::Blockchain;
 use miner::Miner;
+use std::process;
 use transaction::Transaction;
 
 fn main() {
     // Load blockchain from files
     let mut blockchain = Blockchain::load_from_files().unwrap_or_else(|_| Blockchain::new());
+
+    if blockchain.is_chain_valid() {
+        println!("bchn is valid");
+    } else {
+        println!("bchn invalid");
+        process::exit(1);
+    }
 
     // Create a miner
     let miner = Miner::new("miner1".to_string());

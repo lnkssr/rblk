@@ -106,4 +106,28 @@ impl Blockchain {
         }
         0
     }
+
+    pub fn is_chain_valid(&self) -> bool {
+        for i in 1..self.chain.len() {
+            let current_block = &self.chain[i];
+            let previous_block = &self.chain[i - 1];
+
+            if current_block.hash != current_block.calculate_hash() {
+                println!(
+                    "Ошибка: Хеш блока с индексом {} неверен.",
+                    current_block.index
+                );
+                return false;
+            }
+
+            if current_block.previous_hash != previous_block.hash {
+                println!(
+                    "Ошибка: Хеш предыдущего блока с индексом {} неверен.",
+                    current_block.index
+                );
+                return false;
+            }
+        }
+        true
+    }
 }
