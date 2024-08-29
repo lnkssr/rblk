@@ -14,9 +14,9 @@ fn main() {
     let mut blockchain = Blockchain::load_from_files().unwrap_or_else(|_| Blockchain::new());
 
     if blockchain.is_chain_valid() {
-        println!("bchn is valid");
+        println!("blockchain is valid");
     } else {
-        println!("bchn invalid");
+        println!("blockchain invalid");
         process::exit(1);
     }
 
