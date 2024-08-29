@@ -25,16 +25,11 @@ fn test_reward_miner() {
     let mut blockchain = Blockchain::new();
 
     // Награждаем майнера через добавление блока
-    blockchain.add_block(
-        "New Block".to_string(),
-        "miner1".to_string(),
-        vec![],
-    );
+    blockchain.add_block("New Block".to_string(), "miner1".to_string(), vec![]);
 
     // Проверяем, что баланс майнера увеличился на 50 токенов
     assert_eq!(blockchain.get_wallet_balance("miner1"), 50);
 }
-
 
 #[test]
 fn test_set_wallet_balance() {
@@ -55,7 +50,11 @@ fn test_transaction_balances() {
         "user2".to_string(),
         200,
     )];
-    blockchain.add_block("Transaction Block".to_string(), "miner1".to_string(), transactions);
+    blockchain.add_block(
+        "Transaction Block".to_string(),
+        "miner1".to_string(),
+        transactions,
+    );
 
     // Проверка балансов после транзакции
     assert_eq!(blockchain.get_wallet_balance("user1"), 800); // 1000 - 200

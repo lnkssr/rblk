@@ -17,8 +17,12 @@ fn test_mine_block() {
         "user2".to_string(),
         50,
     )];
-    
-    miner.mine_block(&mut blockchain, "Test Block".to_string(), transactions.clone());
+
+    miner.mine_block(
+        &mut blockchain,
+        "Test Block".to_string(),
+        transactions.clone(),
+    );
 
     // Проверка, что добавлен новый блок
     assert_eq!(blockchain.chain.len(), 2);
@@ -28,5 +32,5 @@ fn test_mine_block() {
 
     // Проверка балансов после транзакции
     assert_eq!(blockchain.get_wallet_balance("user1"), 950); // Предполагается, что начальный баланс был 1000
-    assert_eq!(blockchain.get_wallet_balance("user2"), 50);  // Получил 50 от user1
+    assert_eq!(blockchain.get_wallet_balance("user2"), 50); // Получил 50 от user1
 }
