@@ -20,10 +20,18 @@ impl Blockchain {
         }
     }
 
-    pub fn get_latest_block(&self) -> &Block {
-        self.chain
-            .last()
-            .expect("Blockchain should have at least one block")
+    // Возвращаем индекс кошелька, если он существует, или создаем новый и возвращаем его индекс
+    pub fn get_wallet(&mut self, address: &str) -> usize {
+        if let Some(index) = self
+            .wallets
+            .iter()
+            .position(|wallet| wallet.address == address)
+        {
+            return index;
+        }
+
+        self.wallets.push(Wallet::new(address.to_string()));
+        self.wallets.len() - 1 // Возвращаем индекс последнего добавленного кошелька
     }
 
     pub fn add_block(
@@ -37,37 +45,38 @@ impl Blockchain {
             previous_block.index + 1,
             data,
             previous_block.hash.clone(),
-            transactions,
+            transactions.clone(),
         );
 
-        self.reward_miner(miner_address, 50);
+        // Обработка транзакций и обновление балансов
+        for transaction in transactions {
+            let sender_index = self.get_wallet(&transaction.from);
+            let receiver_index = self.get_wallet(&transaction.to);
+
+            if self.wallets[sender_index].balance >= transaction.amount {
+                self.wallets[sender_index].balance -= transaction.amount;
+                self.wallets[receiver_index].balance += transaction.amount;
+            } else {
+                println!("Ошибка: Недостаточно средств на кошельке отправителя");
+            }
+        }
+
+        // Награждение майнера
+        let miner_index = self.get_wallet(&miner_address);
+        self.wallets[miner_index].balance += 50;
+
         self.chain.push(new_block);
 
-        // Save block and wallet data to files
+        // Сохранение данных блокчейна и кошельков
         if let Err(e) = self.save_to_files() {
             eprintln!("Error saving blockchain data: {:?}", e);
         }
     }
 
-    pub fn reward_miner(&mut self, miner_address: String, reward: u64) {
-        for wallet in &mut self.wallets {
-            if wallet.address == miner_address {
-                wallet.balance += reward;
-                return;
-            }
-        }
-
-        let new_wallet = Wallet {
-            address: miner_address,
-            balance: reward,
-        };
-
-        self.wallets.push(new_wallet);
-
-        // Save wallet data to file
-        if let Err(e) = self.save_wallets_to_file() {
-            eprintln!("Error saving wallet data: {:?}", e);
-        }
+    pub fn get_latest_block(&self) -> &Block {
+        self.chain
+            .last()
+            .expect("Blockchain should have at least one block")
     }
 
     pub fn save_to_files(&self) -> Result<(), std::io::Error> {
@@ -98,15 +107,6 @@ impl Blockchain {
         Ok(blockchain)
     }
 
-    pub fn get_wallet_balance(&self, address: &str) -> u64 {
-        for wallet in &self.wallets {
-            if wallet.address == address {
-                return wallet.balance;
-            }
-        }
-        0
-    }
-
     pub fn is_chain_valid(&self) -> bool {
         for i in 1..self.chain.len() {
             let current_block = &self.chain[i];
@@ -129,5 +129,18 @@ impl Blockchain {
             }
         }
         true
+    }
+
+    pub fn set_wallet_balance(&mut self, address: &str, balance: u64) {
+        let wallet_index = self.get_wallet(address);
+        self.wallets[wallet_index].balance = balance;
+    }
+
+    pub fn get_wallet_balance(&self, address: &str) -> u64 {
+        if let Some(wallet) = self.wallets.iter().find(|w| w.address == address) {
+            wallet.balance
+        } else {
+            0
+        }
     }
 }

@@ -22,14 +22,10 @@ impl Miner {
             latest_block.index + 1,
             data,
             latest_block.hash.clone(),
-            transactions,
+            transactions.clone(),
         );
 
         new_block.mine_block();
-        blockchain.add_block(
-            new_block.data.clone(),
-            self.address.clone(),
-            new_block.transactions,
-        );
+        blockchain.add_block(new_block.data.clone(), self.address.clone(), transactions);
     }
 }
