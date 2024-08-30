@@ -6,8 +6,8 @@ mod wallet;
 
 use blockchain::Blockchain;
 use miner::Miner;
-use transaction::Transaction;
 use std::process;
+use transaction::Transaction;
 fn main() {
     // Загрузка блокчейна из файлов
     let mut blockchain = Blockchain::load_from_files().unwrap_or_else(|_| Blockchain::new());
