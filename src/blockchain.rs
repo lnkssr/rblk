@@ -20,7 +20,6 @@ impl Blockchain {
         }
     }
 
-    // Возвращаем индекс кошелька, если он существует, или создаем новый и возвращаем его индекс
     pub fn get_wallet(&mut self, address: &str) -> usize {
         if let Some(index) = self
             .wallets
@@ -31,7 +30,7 @@ impl Blockchain {
         }
 
         self.wallets.push(Wallet::new(address.to_string()));
-        self.wallets.len() - 1 // Возвращаем индекс последнего добавленного кошелька
+        self.wallets.len() - 1 
     }
 
     pub fn add_block(
@@ -48,7 +47,6 @@ impl Blockchain {
             transactions.clone(),
         );
 
-        // Обработка транзакций и обновление балансов
         for transaction in transactions {
             let sender_index = self.get_wallet(&transaction.from);
             let receiver_index = self.get_wallet(&transaction.to);
@@ -61,13 +59,11 @@ impl Blockchain {
             }
         }
 
-        // Награждение майнера
         let miner_index = self.get_wallet(&miner_address);
         self.wallets[miner_index].balance += 50;
 
         self.chain.push(new_block);
 
-        // Сохранение данных блокчейна и кошельков
         if let Err(e) = self.save_to_files() {
             eprintln!("Error saving blockchain data: {:?}", e);
         }
