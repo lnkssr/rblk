@@ -1,8 +1,13 @@
-use rblc::blockchain::Blockchain;
-use rblc::miner::Miner;
-use rblc::transaction::Transaction;
-use std::process;
+mod block;
+mod blockchain;
+mod miner;
+mod transaction;
+mod wallet;
 
+use blockchain::Blockchain;
+use miner::Miner;
+use transaction::Transaction;
+use std::process;
 fn main() {
     // Загрузка блокчейна из файлов
     let mut blockchain = Blockchain::load_from_files().unwrap_or_else(|_| Blockchain::new());
