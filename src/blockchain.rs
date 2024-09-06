@@ -30,7 +30,7 @@ impl Blockchain {
         }
 
         self.wallets.push(Wallet::new(address.to_string()));
-        self.wallets.len() - 1 
+        self.wallets.len() - 1
     }
 
     pub fn add_block(
