@@ -161,3 +161,7 @@
 - [Serde for Serialization/Deserialization](https://serde.rs/)
 - [SHA-256 Hashing Algorithm](https://en.wikipedia.org/wiki/SHA-2)
 
+___
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
