@@ -5,7 +5,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 const DIFFICULTY_PREFIX: &str = "0000";
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Block {
     pub index: u64,
     pub timestamp: u128,

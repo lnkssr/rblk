@@ -29,7 +29,8 @@ impl Blockchain {
             return index;
         }
 
-        self.wallets.push(Wallet::new(address.to_string()));
+        let new_wallet = Wallet::new();
+        self.wallets.push(new_wallet);
         self.wallets.len() - 1
     }
 
@@ -60,12 +61,12 @@ impl Blockchain {
         }
 
         let miner_index = self.get_wallet(&miner_address);
-        self.wallets[miner_index].balance += 50;
+        self.wallets[miner_index].balance += 50; // Награда майнеру
 
         self.chain.push(new_block);
 
         if let Err(e) = self.save_to_files() {
-            eprintln!("Error saving blockchain data: {:?}", e);
+            eprintln!("Ошибка сохранения данных блокчейна: {:?}", e);
         }
     }
 

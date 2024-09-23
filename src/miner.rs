@@ -1,6 +1,6 @@
 use crate::block::Block;
-use crate::Blockchain;
-use crate::Transaction;
+use crate::blockchain::Blockchain;
+use crate::transaction::Transaction;
 
 pub struct Miner {
     pub address: String,
