@@ -13,9 +13,10 @@ impl Wallet {
     pub fn new() -> Self {
         Wallet {
             address: Self::generate_private_key(),
-            balance: 0,
+            balance: 500,
         }
     }
+
     pub fn generate_address(&self) -> &str {
         self.address.as_ref()
     }
@@ -31,5 +32,13 @@ impl Wallet {
         let mut rng = rand::thread_rng();
         let private_key: [u8; 32] = rng.gen();
         hex::encode(private_key)
+    }
+
+    pub fn get_balance(&self) -> u64 {
+        self.balance
+    }
+
+    pub fn set_balance(&mut self, balance: u64) {
+        self.balance = balance;
     }
 }

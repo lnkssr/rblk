@@ -1,13 +1,12 @@
-use crate::blockchain::Blockchain;
+use crate::{blockchain::Blockchain, wallet::Wallet};
 use crate::transaction::Transaction;
-use crate::wallet::Wallet;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use std::sync::{Arc, Mutex};
 
 pub async fn create_wallet(blockchain: web::Data<Arc<Mutex<Blockchain>>>) -> impl Responder {
     let mut blockchain = blockchain.lock().unwrap();
     let wallet = Wallet::new();
-    blockchain.set_wallet_balance(&wallet.address, 100);
+    blockchain.get_wallet(&wallet.address);  // Создание нового кошелька
     HttpResponse::Created().json(wallet)
 }
 
@@ -15,8 +14,9 @@ pub async fn get_balance(
     blockchain: web::Data<Arc<Mutex<Blockchain>>>,
     address: web::Path<String>,
 ) -> impl Responder {
-    let blockchain = blockchain.lock().unwrap();
-    let balance = blockchain.get_wallet_balance(&address);
+    let mut blockchain = blockchain.lock().unwrap();
+    let wallet_index = blockchain.get_wallet(&address);
+    let balance = blockchain.wallets[wallet_index].get_balance(); // Получение баланса кошелька
     HttpResponse::Ok().json(balance)
 }
 
@@ -24,8 +24,25 @@ pub async fn create_transaction(
     blockchain: web::Data<Arc<Mutex<Blockchain>>>,
     transaction: web::Json<Transaction>,
 ) -> impl Responder {
-    let blockchain = blockchain.lock().unwrap();
-    if blockchain.get_wallet_balance(&transaction.from) >= transaction.amount {
+    let mut blockchain = blockchain.lock().unwrap();
+    
+    // Получаем индексы отправителя и получателя
+    let sender_index = blockchain.get_wallet(&transaction.from);
+    let receiver_index = blockchain.get_wallet(&transaction.to);
+
+    // Чтобы избежать одновременного заимствования изменяемых ссылок, используем `split_at_mut`
+    let (sender_wallet, receiver_wallet) = if sender_index < receiver_index {
+        let (left, right) = blockchain.wallets.split_at_mut(receiver_index);
+        (&mut left[sender_index], &mut right[0])
+    } else {
+        let (left, right) = blockchain.wallets.split_at_mut(sender_index);
+        (&mut right[0], &mut left[receiver_index])
+    };
+
+    // Проверяем баланс отправителя
+    if sender_wallet.get_balance() >= transaction.amount {
+        sender_wallet.set_balance(sender_wallet.get_balance() - transaction.amount);
+        receiver_wallet.set_balance(receiver_wallet.get_balance() + transaction.amount);
         HttpResponse::Created().json("Transaction created")
     } else {
         HttpResponse::BadRequest().json("Insufficient funds")
@@ -85,73 +102,3 @@ pub async fn start_server(blockchain: Arc<Mutex<Blockchain>>) {
     .await
     .unwrap();
 }
-/*
-### Список команд API
-
-1. **Создание кошелька**
-   - **Метод**: `POST /wallet`
-   - **Описание**: Создаёт новый кошелёк с начальным балансом 100.
-
-2. **Получение баланса кошелька**
-   - **Метод**: `GET /balance/{address}`
-   - **Описание**: Возвращает баланс кошелька по указанному адресу.
-
-3. **Создание транзакции**
-   - **Метод**: `POST /transaction`
-   - **Описание**: Создаёт новую транзакцию, проверяя, достаточно ли средств на кошельке отправителя.
-
-4. **Добавление нового блока**
-   - **Метод**: `POST /block`
-   - **Описание**: Добавляет новый блок в блокчейн с указанными данными и адресом майнера.
-
-5. **Проверка валидности блокчейна**
-   - **Метод**: `GET /chain/validity`
-   - **Описание**: Проверяет, является ли блокчейн валидным.
-
-6. **Сохранение состояния блокчейна**
-   - **Метод**: `POST /chain/save`
-   - **Описание**: Сохраняет текущее состояние блокчейна и кошельков в файлы.
-
-7. **Загрузка состояния блокчейна**
-   - **Метод**: `POST /chain/load`
-   - **Описание**: Загружает состояние блокчейна и кошельков из файлов.
-
-### Примеры использования команд
-
-- **Создание кошелька**:
-  ```sh
-  curl -X POST http://127.0.0.1:3000/wallet
-  ```
-
-- **Получение баланса**:
-  ```sh
-  curl http://127.0.0.1:3000/balance/{адрес_кошелька}
-  ```
-
-- **Создание транзакции**:
-  ```sh
-  curl -X POST http://127.0.0.1:3000/transaction -H "Content-Type: application/json" -d '{"from": "адрес_отправителя", "to": "адрес_получателя", "amount": 10}'
-  ```
-
-- **Добавление блока**:
-  ```sh
-  curl -X POST http://127.0.0.1:3000/block -H "Content-Type: application/json" -d '{"data": "Данные для блока", "miner_address": "адрес_майнера"}'
-  ```
-
-- **Проверка валидности блокчейна**:
-  ```sh
-  curl http://127.0.0.1:3000/chain/validity
-  ```
-
-- **Сохранение состояния**:
-  ```sh
-  curl -X POST http://127.0.0.1:3000/chain/save
-  ```
-
-- **Загрузка состояния**:
-  ```sh
-  curl -X POST http://127.0.0.1:3000/chain/load
-  ```
-
-Этот список охватывает весь функционал вашего API и может служить справочным материалом для работы с ним.
-*/

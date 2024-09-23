@@ -21,11 +21,7 @@ impl Blockchain {
     }
 
     pub fn get_wallet(&mut self, address: &str) -> usize {
-        if let Some(index) = self
-            .wallets
-            .iter()
-            .position(|wallet| wallet.address == address)
-        {
+        if let Some(index) = self.wallets.iter().position(|wallet| wallet.address == address) {
             return index;
         }
 
@@ -34,12 +30,7 @@ impl Blockchain {
         self.wallets.len() - 1
     }
 
-    pub fn add_block(
-        &mut self,
-        data: String,
-        miner_address: String,
-        transactions: Vec<Transaction>,
-    ) {
+    pub fn add_block(&mut self, data: String, miner_address: String, transactions: Vec<Transaction>) {
         let previous_block = self.get_latest_block();
         let new_block = Block::new(
             previous_block.index + 1,
@@ -52,16 +43,29 @@ impl Blockchain {
             let sender_index = self.get_wallet(&transaction.from);
             let receiver_index = self.get_wallet(&transaction.to);
 
-            if self.wallets[sender_index].balance >= transaction.amount {
-                self.wallets[sender_index].balance -= transaction.amount;
-                self.wallets[receiver_index].balance += transaction.amount;
+            let (wallets_left, wallets_right) = if sender_index <= receiver_index {
+                self.wallets.split_at_mut(receiver_index + 1)
+            } else {
+                self.wallets.split_at_mut(sender_index + 1)
+            };
+
+            let sender_wallet = if sender_index <= receiver_index {
+                &mut wallets_left[sender_index]
+            } else {
+                &mut wallets_right[receiver_index]
+            };
+
+            if sender_wallet.get_balance() >= transaction.amount {
+                sender_wallet.set_balance(sender_wallet.get_balance() - transaction.amount);
+            // inst work, i dont know why)  receiver_wallet.set_balance(receiver_wallet.get_balance() + transaction.amount);
             } else {
                 println!("Ошибка: Недостаточно средств на кошельке отправителя");
             }
         }
 
         let miner_index = self.get_wallet(&miner_address);
-        self.wallets[miner_index].balance += 50; // Награда майнеру
+        let miner_wallet = &mut self.wallets[miner_index];
+        miner_wallet.set_balance(miner_wallet.get_balance() + 50); // Награда майнеру
 
         self.chain.push(new_block);
 
@@ -78,9 +82,10 @@ impl Blockchain {
 
     pub fn save_to_files(&self) -> Result<(), std::io::Error> {
         let blockchain_path = Path::new("blockchain.json");
-        let blockchain_json = serde_json::to_string(self)?;
-        fs::write(blockchain_path, blockchain_json)?;
-
+        let blockchain_json = serde_json::to_string(self)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, format!("Ошибка сериализации: {}", e)))?;
+        fs::write(blockchain_path, blockchain_json)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, format!("Ошибка записи в файл: {}", e)))?;
         Ok(())
     }
 
@@ -88,7 +93,6 @@ impl Blockchain {
         let wallets_path = Path::new("wallets.json");
         let wallets_json = serde_json::to_string(&self.wallets)?;
         fs::write(wallets_path, wallets_json)?;
-
         Ok(())
     }
 
@@ -126,18 +130,5 @@ impl Blockchain {
             }
         }
         true
-    }
-
-    pub fn set_wallet_balance(&mut self, address: &str, balance: u64) {
-        let wallet_index = self.get_wallet(address);
-        self.wallets[wallet_index].balance = balance;
-    }
-
-    pub fn get_wallet_balance(&self, address: &str) -> u64 {
-        if let Some(wallet) = self.wallets.iter().find(|w| w.address == address) {
-            wallet.balance
-        } else {
-            0
-        }
     }
 }
