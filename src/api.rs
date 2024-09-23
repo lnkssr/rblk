@@ -2,11 +2,18 @@ use crate::{blockchain::Blockchain, wallet::Wallet};
 use crate::transaction::Transaction;
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use std::sync::{Arc, Mutex};
+use serde::Deserialize;
+
+#[derive(Deserialize)]
+pub struct AddBlockRequest {
+    pub data: String,
+    pub miner_address: String,
+}
 
 pub async fn create_wallet(blockchain: web::Data<Arc<Mutex<Blockchain>>>) -> impl Responder {
     let mut blockchain = blockchain.lock().unwrap();
     let wallet = Wallet::new();
-    blockchain.get_wallet(&wallet.address);  // Создание нового кошелька
+    blockchain.get_wallet(&wallet.address);
     HttpResponse::Created().json(wallet)
 }
 
@@ -16,7 +23,7 @@ pub async fn get_balance(
 ) -> impl Responder {
     let mut blockchain = blockchain.lock().unwrap();
     let wallet_index = blockchain.get_wallet(&address);
-    let balance = blockchain.wallets[wallet_index].get_balance(); // Получение баланса кошелька
+    let balance = blockchain.wallets[wallet_index].get_balance();
     HttpResponse::Ok().json(balance)
 }
 
@@ -25,12 +32,9 @@ pub async fn create_transaction(
     transaction: web::Json<Transaction>,
 ) -> impl Responder {
     let mut blockchain = blockchain.lock().unwrap();
-    
-    // Получаем индексы отправителя и получателя
     let sender_index = blockchain.get_wallet(&transaction.from);
     let receiver_index = blockchain.get_wallet(&transaction.to);
 
-    // Чтобы избежать одновременного заимствования изменяемых ссылок, используем `split_at_mut`
     let (sender_wallet, receiver_wallet) = if sender_index < receiver_index {
         let (left, right) = blockchain.wallets.split_at_mut(receiver_index);
         (&mut left[sender_index], &mut right[0])
@@ -39,7 +43,6 @@ pub async fn create_transaction(
         (&mut right[0], &mut left[receiver_index])
     };
 
-    // Проверяем баланс отправителя
     if sender_wallet.get_balance() >= transaction.amount {
         sender_wallet.set_balance(sender_wallet.get_balance() - transaction.amount);
         receiver_wallet.set_balance(receiver_wallet.get_balance() + transaction.amount);
@@ -51,11 +54,10 @@ pub async fn create_transaction(
 
 pub async fn add_block(
     blockchain: web::Data<Arc<Mutex<Blockchain>>>,
-    data: web::Json<String>,
-    miner_address: web::Json<String>,
+    request: web::Json<AddBlockRequest>,
 ) -> impl Responder {
     let mut blockchain = blockchain.lock().unwrap();
-    blockchain.add_block(data.into_inner(), miner_address.into_inner(), vec![]);
+    blockchain.add_block(request.data.clone(), request.miner_address.clone(), vec![]);
     HttpResponse::Created().json("Block added")
 }
 
@@ -72,9 +74,7 @@ pub async fn check_chain_validity(blockchain: web::Data<Arc<Mutex<Blockchain>>>)
 pub async fn save_chain(blockchain: web::Data<Arc<Mutex<Blockchain>>>) -> impl Responder {
     let blockchain = blockchain.lock().unwrap();
     blockchain.save_to_files().expect("Error saving blockchain");
-    blockchain
-        .save_wallets_to_file()
-        .expect("Error saving wallets");
+    blockchain.save_to_files().expect("Error saving wallets");
     HttpResponse::Ok().body("Blockchain saved")
 }
 

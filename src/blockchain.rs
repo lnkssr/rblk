@@ -43,21 +43,21 @@ impl Blockchain {
             let sender_index = self.get_wallet(&transaction.from);
             let receiver_index = self.get_wallet(&transaction.to);
 
-            let (wallets_left, wallets_right) = if sender_index <= receiver_index {
+            let (sender_wallets, receiver_wallets) = if sender_index <= receiver_index {
                 self.wallets.split_at_mut(receiver_index + 1)
             } else {
                 self.wallets.split_at_mut(sender_index + 1)
             };
 
             let sender_wallet = if sender_index <= receiver_index {
-                &mut wallets_left[sender_index]
+                &mut sender_wallets[sender_index]
             } else {
-                &mut wallets_right[receiver_index]
+                &mut receiver_wallets[sender_index - sender_wallets.len()]
             };
 
             if sender_wallet.get_balance() >= transaction.amount {
                 sender_wallet.set_balance(sender_wallet.get_balance() - transaction.amount);
-            // inst work, i dont know why)  receiver_wallet.set_balance(receiver_wallet.get_balance() + transaction.amount);
+                //receiver_wallet.set_balance(receiver_wallet.get_balance() + transaction.amount);
             } else {
                 println!("Ошибка: Недостаточно средств на кошельке отправителя");
             }
@@ -69,8 +69,17 @@ impl Blockchain {
 
         self.chain.push(new_block);
 
-        if let Err(e) = self.save_to_files() {
-            eprintln!("Ошибка сохранения данных блокчейна: {:?}", e);
+        // Проверка содержимого блокчейна перед записью
+        match serde_json::to_string(self) {
+            Ok(blockchain_json) => {
+                println!("Содержимое блокчейна для записи: {}", blockchain_json);
+                if let Err(e) = self.save_to_files() {
+                    eprintln!("Ошибка сохранения данных блокчейна: {:?}", e);
+                }
+            }
+            Err(e) => {
+                eprintln!("Ошибка сериализации блокчейна: {:?}", e);
+            }
         }
     }
 
@@ -86,13 +95,6 @@ impl Blockchain {
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, format!("Ошибка сериализации: {}", e)))?;
         fs::write(blockchain_path, blockchain_json)
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, format!("Ошибка записи в файл: {}", e)))?;
-        Ok(())
-    }
-
-    pub fn save_wallets_to_file(&self) -> Result<(), std::io::Error> {
-        let wallets_path = Path::new("wallets.json");
-        let wallets_json = serde_json::to_string(&self.wallets)?;
-        fs::write(wallets_path, wallets_json)?;
         Ok(())
     }
 
