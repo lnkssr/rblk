@@ -1,7 +1,7 @@
+use hex;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use rand::Rng;
-use hex;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Wallet {
@@ -29,7 +29,7 @@ impl Wallet {
 
     pub fn generate_private_key() -> String {
         let mut rng = rand::thread_rng();
-        let private_key: [u8; 32] = rng.gen(); 
+        let private_key: [u8; 32] = rng.gen();
         hex::encode(private_key)
     }
 }
