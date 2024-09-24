@@ -4,14 +4,26 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-actix-web = "4.0"  # Actix Web for the HTTP server
-serde = { version = "1.0", features = ["derive"] }  # For JSON (de)serialization
-serde_json = "1.0"  # JSON support for Actix
-sha2 = "0.10"  # For SHA-256 hashing
-tokio = { version = "1", features = ["full"] }  # Needed for async runtime in Actix
-log = "0.4"  # Logging library
-hex = "0.4"  # Hexadecimal support for SHA-256 hashes
+actix-web = "4.0"  # Actix Web для HTTP сервера
+serde = { version = "1.0", features = ["derive"] }  # Для (де)сериализации JSON
+serde_json = "1.0"  # Поддержка JSON для Actix
+sha2 = "0.10"  # Для хеширования SHA-256
+tokio = { version = "1", features = ["full"] }  # Необходим для асинхронного выполнения в Actix
+log = "0.4"  # Библиотека для логирования
+hex = "0.4"  # Поддержка шестнадцатеричного формата для SHA-256 хешей
 parking_lot = "0.12"
 rand = "0.8"
 env_logger = "0.10"
 
+[workspace]
+members = [
+    "mod_wallet",
+    "kernel"
+]
+
+[[bin]]
+name = "rblk"
+path = "kernel/src/main.rs"
+
+[lib]
+path = "kernel/src/lib.rs"

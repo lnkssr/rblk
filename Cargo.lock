@@ -650,6 +650,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "kernel"
+version = "0.1.0"
+dependencies = [
+ "actix-web",
+ "env_logger",
+ "hex",
+ "log",
+ "parking_lot",
+ "rand",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tokio",
+]
+
+[[package]]
 name = "language-tags"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -727,6 +743,10 @@ dependencies = [
  "wasi",
  "windows-sys",
 ]
+
+[[package]]
+name = "mod_wallet"
+version = "0.1.0"
 
 [[package]]
 name = "num-conv"

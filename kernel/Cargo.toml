@@ -1,0 +1,16 @@
+[package]
+name = "kernel"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-web = "4.9.0"  # Убедитесь, что используете последнюю версию
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sha2 = "0.10"
+tokio = { version = "1", features = ["full"] }
+log = "0.4"
+hex = "0.4"
+parking_lot = "0.12"
+rand = "0.8"
+env_logger = "0.10"
