@@ -1,8 +1,8 @@
-use crate::{blockchain::Blockchain, wallet::Wallet};
 use crate::transaction::Transaction;
+use crate::{blockchain::Blockchain, wallet::Wallet};
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
-use std::sync::{Arc, Mutex};
 use serde::Deserialize;
+use std::sync::{Arc, Mutex};
 
 #[derive(Deserialize)]
 pub struct AddBlockRequest {

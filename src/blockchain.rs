@@ -21,7 +21,11 @@ impl Blockchain {
     }
 
     pub fn get_wallet(&mut self, address: &str) -> usize {
-        if let Some(index) = self.wallets.iter().position(|wallet| wallet.address == address) {
+        if let Some(index) = self
+            .wallets
+            .iter()
+            .position(|wallet| wallet.address == address)
+        {
             return index;
         }
 
@@ -30,7 +34,12 @@ impl Blockchain {
         self.wallets.len() - 1
     }
 
-    pub fn add_block(&mut self, data: String, miner_address: String, transactions: Vec<Transaction>) {
+    pub fn add_block(
+        &mut self,
+        data: String,
+        miner_address: String,
+        transactions: Vec<Transaction>,
+    ) {
         let previous_block = self.get_latest_block();
         let new_block = Block::new(
             previous_block.index + 1,
@@ -57,7 +66,6 @@ impl Blockchain {
 
             if sender_wallet.get_balance() >= transaction.amount {
                 sender_wallet.set_balance(sender_wallet.get_balance() - transaction.amount);
-                //receiver_wallet.set_balance(receiver_wallet.get_balance() + transaction.amount);
             } else {
                 println!("Ошибка: Недостаточно средств на кошельке отправителя");
             }
@@ -65,11 +73,10 @@ impl Blockchain {
 
         let miner_index = self.get_wallet(&miner_address);
         let miner_wallet = &mut self.wallets[miner_index];
-        miner_wallet.set_balance(miner_wallet.get_balance() + 50); // Награда майнеру
+        miner_wallet.set_balance(miner_wallet.get_balance() + 50);
 
         self.chain.push(new_block);
 
-        // Проверка содержимого блокчейна перед записью
         match serde_json::to_string(self) {
             Ok(blockchain_json) => {
                 println!("Содержимое блокчейна для записи: {}", blockchain_json);
@@ -91,10 +98,18 @@ impl Blockchain {
 
     pub fn save_to_files(&self) -> Result<(), std::io::Error> {
         let blockchain_path = Path::new("blockchain.json");
-        let blockchain_json = serde_json::to_string(self)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, format!("Ошибка сериализации: {}", e)))?;
-        fs::write(blockchain_path, blockchain_json)
-            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, format!("Ошибка записи в файл: {}", e)))?;
+        let blockchain_json = serde_json::to_string(self).map_err(|e| {
+            std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("Ошибка сериализации: {}", e),
+            )
+        })?;
+        fs::write(blockchain_path, blockchain_json).map_err(|e| {
+            std::io::Error::new(
+                std::io::ErrorKind::Other,
+                format!("Ошибка записи в файл: {}", e),
+            )
+        })?;
         Ok(())
     }
 

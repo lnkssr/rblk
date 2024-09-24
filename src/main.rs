@@ -8,3 +8,7 @@ async fn main() {
 
     start_server(blockchain).await;
 }
+// to do
+// 1. get miner commissions
+// 3. get network prototype
+// 4. add transactions ui sum
