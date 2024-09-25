@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }  # Для (де)сериализации JSON
 reqwest = "0.12.7"
+tokio = { version = "1", features = ["full"] }  # Необходим для асинхронного выполнения в Actix

@@ -1,6 +1,7 @@
 use reqwest::Client;
 use serde::Deserialize;
 use std::error::Error;
+use tokio;
 
 #[derive(Deserialize, Debug)]
 pub struct Wallet {
