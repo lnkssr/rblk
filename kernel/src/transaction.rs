@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Transaction {
     pub from: String,
     pub to: String,
@@ -9,6 +9,6 @@ pub struct Transaction {
 
 impl Transaction {
     pub fn new(from: String, to: String, amount: u64) -> Self {
-        Transaction { from, to, amount }
+        Self { from, to, amount }
     }
 }

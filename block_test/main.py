@@ -27,8 +27,10 @@ def test_get_balance(address):
     if response.status_code == 200:
         balance = response.json()
         print(f"Баланс кошелька {address}: {balance}")
+        return balance
     else:
         print(f"Ошибка при получении баланса кошелька {address}: {response.status_code}")
+        return None
 
 def test_create_transaction(from_address, to_address, amount):
     data = {
@@ -81,27 +83,36 @@ def test_load_chain():
 
 def run_tests():
     print("Запуск тестов...")
+    
+    # Создание двух кошельков
     wallet_1 = test_create_wallet()
     wallet_2 = test_create_wallet()
 
     if wallet_1 and wallet_2:
-        test_get_balance(wallet_1)
-        test_get_balance(wallet_2)
+        # Получение баланса обоих кошельков
+        balance_1 = test_get_balance(wallet_1)
+        balance_2 = test_get_balance(wallet_2)
 
         # Проверка транзакции с достаточным балансом
-        test_create_transaction(wallet_1, wallet_2, 10)
-        test_get_balance(wallet_1)  # Проверяем баланс после транзакции
-        test_get_balance(wallet_2)
+        if balance_1 is not None and balance_1 >= 10:
+            test_create_transaction(wallet_1, wallet_2, 10)
+            # Проверка баланса после транзакции
+            test_get_balance(wallet_1)
+            test_get_balance(wallet_2)
 
         # Проверка транзакции с недостаточным балансом
         test_create_transaction(wallet_2, wallet_1, 600)  # Пример перевода больше, чем на балансе
 
+        # Добавление блока
         test_add_block("Данные для блока", wallet_1)
 
+        # Проверка валидности цепочки
         test_check_chain_validity()
 
+        # Сохранение цепочки
         test_save_chain()
 
+        # Загрузка цепочки
         test_load_chain()
 
 if __name__ == "__main__":

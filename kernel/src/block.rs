@@ -1,11 +1,9 @@
-use crate::transaction::Transaction;
-use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use std::time::{SystemTime, UNIX_EPOCH};
+use serde::{Serialize, Deserialize};
+use chrono;
+use crate::transaction::Transaction;
 
-const DIFFICULTY_PREFIX: &str = "0000";
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Block {
     pub index: u64,
     pub timestamp: u128,
@@ -13,50 +11,36 @@ pub struct Block {
     pub previous_hash: String,
     pub hash: String,
     pub nonce: u64,
-    pub transactions: Vec<Transaction>,
 }
-impl Block {
-    pub fn new(
-        index: u64,
-        data: String,
-        previous_hash: String,
-        transactions: Vec<Transaction>,
-    ) -> Block {
-        let timestamp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .expect("Time went backwards")
-            .as_millis();
 
+impl Block {
+    pub fn new(index: u64, data: String, previous_hash: String, transactions: Vec<Transaction>) -> Self {
         let mut block = Block {
             index,
-            timestamp,
+            timestamp: chrono::Utc::now().timestamp_millis() as u128,
             data,
             previous_hash,
             hash: String::new(),
             nonce: 0,
-            transactions,
         };
-
-        block.mine_block();
+        block.hash = block.calculate_hash();
         block
     }
 
     pub fn calculate_hash(&self) -> String {
-        let transactions_str = serde_json::to_string(&self.transactions).unwrap();
-        let block_content = format!(
-            "{}{}{}{}{}{}",
-            self.index, self.timestamp, self.data, self.previous_hash, self.nonce, transactions_str
-        );
+        let input = format!("{}{}{}{}", self.index, self.timestamp, self.data, self.previous_hash);
         let mut hasher = Sha256::new();
-        hasher.update(block_content);
-        let result = hasher.finalize();
-        format!("{:x}", result)
+        hasher.update(input);
+        format!("{:x}", hasher.finalize())
     }
 
     pub fn mine_block(&mut self) {
-        while !self.hash.starts_with(DIFFICULTY_PREFIX) {
+        let difficulty = 4;
+        let target = "0".repeat(difficulty);
+        while &self.hash[..difficulty] != target {
             self.nonce += 1;
             self.hash = self.calculate_hash();
         }
+        println!("Block {} mined!", self.index);
     }
 }
